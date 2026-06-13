@@ -17,7 +17,7 @@ import {
 
 const oauthErrorMessages: Record<string, string> = {
   github:
-    "No se pudo iniciar sesión con GitHub. La callback URL debe terminar en /api/auth/callback/github",
+    "No se pudo iniciar sesión con GitHub. Usa exactamente la URL de NEXTAUTH_URL y verifica la callback en GitHub.",
   google:
     "No se pudo iniciar sesión con Google. Usa http://localhost:3000 y verifica las credenciales en .env.",
   OAuthSignin:
@@ -105,12 +105,36 @@ function SignInForm() {
   async function handleOAuth(provider: "google" | "github") {
     setOauthLoading(provider);
     setError("");
-    try {
-      await signIn(provider, { callbackUrl });
-    } catch {
+
+    const result = await signIn(provider, { callbackUrl, redirect: false });
+
+    if (result?.error) {
       setOauthLoading(null);
-      setError("No se pudo conectar. Verifica la URL de callback en GitHub/Google.");
+      setError(getOAuthErrorMessage(result.error));
+      return;
     }
+
+    if (result?.url) {
+      const target = new URL(result.url, window.location.origin);
+
+      if (target.searchParams.get("error")) {
+        setOauthLoading(null);
+        setError(
+          getOAuthErrorMessage(
+            target.searchParams.get("error") ?? "OAuthSignin"
+          )
+        );
+        return;
+      }
+
+      window.location.href = result.url;
+      return;
+    }
+
+    setOauthLoading(null);
+    setError(
+      "No se pudo iniciar la sesión. Abre la app con la misma URL que NEXTAUTH_URL en Vercel."
+    );
   }
 
   const hasSocialLogin =
