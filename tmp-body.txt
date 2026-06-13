@@ -1,1 +1,0 @@
-csrfToken=2a4b847a110f0aa490bb9235684912d6cef7339b448b7a69736a4cb89b792413&callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fdashboard&json=true

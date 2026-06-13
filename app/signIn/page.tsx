@@ -17,7 +17,7 @@ import {
 
 const oauthErrorMessages: Record<string, string> = {
   github:
-    "No se pudo iniciar sesión con GitHub. Usa http://localhost:3000 (no 127.0.0.1 ni otra IP) y reinicia el servidor tras cambiar .env.",
+    "No se pudo iniciar sesión con GitHub. La callback URL debe terminar en /api/auth/callback/github",
   google:
     "No se pudo iniciar sesión con Google. Usa http://localhost:3000 y verifica las credenciales en .env.",
   OAuthSignin:
@@ -28,7 +28,7 @@ const oauthErrorMessages: Record<string, string> = {
   Configuration:
     "Error de configuración de autenticación. Revisa las variables de entorno.",
   Callback:
-    "Error en el callback OAuth. Verifica que la URL de callback en GitHub sea http://localhost:3000/api/auth/callback/github",
+    "Error en el callback OAuth. En GitHub usa: https://tu-dominio.vercel.app/api/auth/callback/github",
   csrf:
     "Error de seguridad (CSRF). Recarga la página e intenta de nuevo usando http://localhost:3000",
 };
@@ -105,25 +105,11 @@ function SignInForm() {
   async function handleOAuth(provider: "google" | "github") {
     setOauthLoading(provider);
     setError("");
-
-    const result = await signIn(provider, { callbackUrl, redirect: false });
-
-    if (result?.error) {
+    try {
+      await signIn(provider, { callbackUrl });
+    } catch {
       setOauthLoading(null);
-      setError(getOAuthErrorMessage(result.error));
-      return;
-    }
-
-    if (result?.url) {
-      const target = new URL(result.url, window.location.origin);
-      if (target.searchParams.get("error")) {
-        setOauthLoading(null);
-        setError(
-          getOAuthErrorMessage(target.searchParams.get("error") ?? "OAuthSignin")
-        );
-        return;
-      }
-      window.location.href = result.url;
+      setError("No se pudo conectar. Verifica la URL de callback en GitHub/Google.");
     }
   }
 

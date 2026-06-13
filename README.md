@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next Auth App
 
-## Getting Started
+Autenticación con NextAuth.js: Google, GitHub y credenciales (bcrypt).
 
-First, run the development server:
+## Desarrollo local
 
 ```bash
+npm install
+cp .env.example .env
+# Completa las variables en .env
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Callbacks en local
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Proveedor | URL de callback |
+|-----------|-----------------|
+| Google | `http://localhost:3000/api/auth/callback/google` |
+| GitHub | `http://localhost:3000/api/auth/callback/github` |
 
-## Learn More
+## Desplegar en Vercel
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Subir el repositorio
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Conecta el repo en [vercel.com/new](https://vercel.com/new). Framework: **Next.js** (detectado automáticamente).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Variables de entorno (Settings → Environment Variables)
 
-## Deploy on Vercel
+Agrega **todas** estas variables en Vercel:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Variable | Valor |
+|----------|--------|
+| `NEXTAUTH_URL` | `https://tu-dominio.vercel.app` (tu URL real de Vercel, sin `/` al final) |
+| `NEXTAUTH_SECRET` | El mismo secret que usas en local |
+| `AUTH_TRUST_HOST` | `true` |
+| `GOOGLE_CLIENT_ID` | Client ID de Google Cloud |
+| `GOOGLE_CLIENT_SECRET` | Client Secret de Google |
+| `GITHUB_ID` | Client ID de GitHub OAuth |
+| `GITHUB_SECRET` | Client Secret de GitHub |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Importante:** `NEXTAUTH_URL` debe coincidir con tu dominio de Vercel (ej. `https://lab-13-web.vercel.app`).
+
+### 3. Actualizar OAuth en Google y GitHub
+
+En **Google Cloud Console** → Credenciales → URIs de redirección autorizados, agrega:
+
+```
+https://tu-dominio.vercel.app/api/auth/callback/google
+```
+
+En **GitHub** → Settings → Developer settings → OAuth App → Authorization callback URL:
+
+```
+https://tu-dominio.vercel.app/api/auth/callback/github
+```
+
+Puedes tener **ambas** URLs (local + Vercel) en cada proveedor.
+
+### 4. Redesplegar
+
+Tras cambiar variables de entorno, en Vercel: **Deployments → Redeploy**.
+
+### Logs de build
+
+Si el build muestra `Installing dependencies...` y `added 387 packages`, es normal. El build continúa con `next build`. Si falla, revisa el error después de esa línea en los logs.
+
+## Scripts
+
+```bash
+npm run dev    # desarrollo
+npm run build  # build de producción
+npm run start  # servidor de producción
+```
