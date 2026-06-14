@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { getProviders, signIn } from "next-auth/react";
+import { getCsrfToken, getProviders, signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useState, Suspense } from "react";
 import { FaGithub, FaGoogle } from "react-icons/fa";
@@ -106,35 +106,53 @@ function SignInForm() {
     setOauthLoading(provider);
     setError("");
 
-    const result = await signIn(provider, { callbackUrl, redirect: false });
-
-    if (result?.error) {
-      setOauthLoading(null);
-      setError(getOAuthErrorMessage(result.error));
-      return;
-    }
-
-    if (result?.url) {
-      const target = new URL(result.url, window.location.origin);
-
-      if (target.searchParams.get("error")) {
+    try {
+      const csrfToken = await getCsrfToken();
+      if (!csrfToken) {
         setOauthLoading(null);
-        setError(
-          getOAuthErrorMessage(
-            target.searchParams.get("error") ?? "OAuthSignin"
-          )
-        );
+        setError("Error de seguridad. Recarga la página e intenta de nuevo.");
         return;
       }
 
-      window.location.href = result.url;
-      return;
-    }
+      const resolvedCallback = callbackUrl.startsWith("http")
+        ? callbackUrl
+        : `${window.location.origin}${callbackUrl.startsWith("/") ? callbackUrl : `/${callbackUrl}`}`;
 
-    setOauthLoading(null);
-    setError(
-      "No se pudo iniciar la sesión. Abre la app con la misma URL que NEXTAUTH_URL en Vercel."
-    );
+      const body = new URLSearchParams({
+        csrfToken,
+        callbackUrl: resolvedCallback,
+        json: "true",
+      });
+
+      const response = await fetch(`/api/auth/signin/${provider}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+        credentials: "same-origin",
+      });
+
+      const data = (await response.json()) as { url?: string };
+
+      if (!data?.url) {
+        setOauthLoading(null);
+        setError("No se pudo conectar con el proveedor. Intenta de nuevo.");
+        return;
+      }
+
+      const target = new URL(data.url, window.location.origin);
+      const oauthError = target.searchParams.get("error");
+
+      if (oauthError) {
+        setOauthLoading(null);
+        setError(getOAuthErrorMessage(oauthError));
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      setOauthLoading(null);
+      setError("Error de conexión. Verifica tu red e intenta de nuevo.");
+    }
   }
 
   const hasSocialLogin =
