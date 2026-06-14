@@ -56,6 +56,20 @@ function SignInForm() {
   }>({});
 
   useEffect(() => {
+    const canonical = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+    if (
+      canonical &&
+      window.location.origin !== new URL(canonical).origin
+    ) {
+      window.location.replace(
+        new URL(
+          `${window.location.pathname}${window.location.search}`,
+          canonical
+        ).href
+      );
+      return;
+    }
+
     getProviders().then((providers) => {
       setAvailableProviders({
         google: Boolean(providers?.google),
