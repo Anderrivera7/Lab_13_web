@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { AuthCard, AuthShell } from "@/components/AuthLayout";
 import { authOptions } from "@/lib/auth";
+import { redirectIfNotCanonical } from "@/lib/redirect-if-not-canonical";
 
 const linkPrimary =
   "rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700";
@@ -10,6 +11,8 @@ const linkSecondary =
   "rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50";
 
 export default async function Home() {
+  await redirectIfNotCanonical("/");
+
   const session = await getServerSession(authOptions);
 
   if (session) {
