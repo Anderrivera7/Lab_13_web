@@ -8,13 +8,21 @@ function redirectToCanonical(request: NextRequest): NextResponse | null {
     return null;
   }
 
-  const canonicalUrl = raw.replace(/\/$/, "");
-  const canonicalHost = new URL(canonicalUrl).host;
   const host =
     request.headers.get("x-forwarded-host") ??
     request.headers.get("host") ??
     "";
   const requestHost = host.split(":")[0];
+
+  if (
+    requestHost === "localhost" ||
+    requestHost === "127.0.0.1"
+  ) {
+    return null;
+  }
+
+  const canonicalUrl = raw.replace(/\/$/, "");
+  const canonicalHost = new URL(canonicalUrl).host;
 
   if (!requestHost || requestHost === canonicalHost) {
     return null;
